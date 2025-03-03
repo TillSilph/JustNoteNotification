@@ -1,0 +1,29 @@
+variables:
+  DOCKER_HOST: "unix:///var/run/docker.sock"
+  GIT_SUBMODULE_STRATEGY: recursive
+  KAFKA_URL: "172.17.0.1:13100"
+  PORT: "7090"
+
+
+
+stages:
+  - build
+  - deploy
+
+# Этап сборки Docker-образа
+build_docker_image:
+  stage: build
+  script:
+    - docker build -t justnote-notif-image .
+  only:
+    - main
+
+# Этап развертывания контейнера
+deploy:
+  stage: deploy
+  script:
+    - docker stop justnote-notif || true
+    - docker rm justnote-notif || true
+    - docker run -d --name justnote-notif -p 9802:3030 -e PORT=$PORT -e KAFKA_URL_BROKER=$KAFKA_URL_BROKER -e SEC_KEY="key" justnote-notif-image 
+  only:
+    - main
